@@ -11,7 +11,7 @@ variable "shortname" {
 
 variable "project" {
   type        = string
-  default     = "oppg4"
+  default     = "oppg6"
   description = "Prosjektnavnet som inngår i alle ressursnavn."
 }
 
