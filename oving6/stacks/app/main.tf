@@ -40,8 +40,8 @@ data "terraform_remote_state" "nettverk" {
     storage_account_name = var.backend_storage_account_name
     container_name       = var.backend_container_name
     key                  = "${var.environment}/nettverk.tfstate"
-    use_azuread_auth = true
-    use_oidc        = true
+    use_azuread_auth     = true
+    use_oidc             = true
   }
 }
 
@@ -54,11 +54,11 @@ resource "azurerm_resource_group" "rg" {
 module "compute" {
   source = "../../modules/compute"
 
-  rg_name   = azurerm_resource_group.rg.name
-  location  = var.location
-  base_name = local.base_name
-  tags      = local.tags
-  subnet_id = data.terraform_remote_state.nettverk.outputs.subnet_ids[var.vm_subnet_key]
+  rg_name        = azurerm_resource_group.rg.name
+  location       = var.location
+  base_name      = local.base_name
+  tags           = local.tags
+  subnet_id      = data.terraform_remote_state.nettverk.outputs.subnet_ids[var.vm_subnet_key]
   vm_size        = var.vm_size
   admin_username = var.admin_username
   admin_password = var.admin_password
