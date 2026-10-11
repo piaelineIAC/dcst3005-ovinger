@@ -1,4 +1,4 @@
-name: Riv ned app – dev og test
+name: Riv ned app – dev, prod og test
 
 on:
   workflow_dispatch:
@@ -44,6 +44,7 @@ jobs:
         environment:
           - dev
           - test
+          - prod
 
     concurrency:
       group: terraform-app-${{ matrix.environment }}
