@@ -1,0 +1,33 @@
+name: ci
+
+on:
+    pull_request:
+        branches:
+            - main
+
+permissions:
+    contents: read           
+
+jobs:
+    validate:
+        name: fmt og validate
+        runs-on: ubuntu-latest
+        steps:
+            - name: Hent koden
+              uses: actions/checkout@v5
+
+            - name: Installer Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Sjekk formatering
+              working-directory: oving6
+              run: terraform fmt -check -recursive
+            
+            - name: Initialiser uten backend
+              working-directory: oving6/stacks/nettverk
+              run: terraform init -backend=false
+
+            - name: Valider terraform
+              working-directory: oving6/stacks/nettverk
+              run: terraform validate
+    
