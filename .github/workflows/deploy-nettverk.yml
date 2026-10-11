@@ -27,7 +27,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: stacks/nettverk
+        working-directory: oving6/stacks/nettverk
 
     env:
       TF_INPUT: "false"

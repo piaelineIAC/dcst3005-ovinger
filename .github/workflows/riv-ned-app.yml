@@ -52,7 +52,7 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: stacks/app
+        working-directory: oving6/stacks/app
 
     env:
       TF_INPUT: "false"
