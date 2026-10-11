@@ -27,3 +27,4 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Hvem er jeg?
+        run: az account show --output table
