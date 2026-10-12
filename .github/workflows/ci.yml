@@ -90,7 +90,7 @@ jobs:
               run: |
                 terraform plan \
                   -no-color \
-                  -var-file="RUNNER_TEMP/nettverk.tfvars" \
+                  -var-file="$RUNNER_TEMP/nettverk.tfvars" \
                   -var="environment=dev" \
                   -out=tfplan > "$RUNNER_TEMP/plan.txt"
                 
