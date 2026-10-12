@@ -53,14 +53,16 @@ jobs:
             ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
             ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
             ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-            KEY_VAULT_NAME: ${{ secrets.AZURE_KEY_VAULT_NAME }}
-            
+            KEY_VAULT_NAME: ${{ secrets.KEYVAULT_NAME }}
+
         steps:
             - name: Hent koden
               uses: actions/checkout@v5
 
             - name: Installer Terraform
               uses: hashicorp/setup-terraform@v3
+              with:
+                terraform_wrapper: false
 
             - name: Logg inn i Azure
               uses: Azure/login@v3.1.0
@@ -68,9 +70,24 @@ jobs:
                 client-id: ${{ secrets.AZURE_CLIENT_ID }}
                 tenant-id: ${{ secrets.AZURE_TENANT_ID }}
                 subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-              
+            
+            - name: Initialiser backend for dev
+              run: |
+                terraform init \
+                -backend-config=../../shared/backend.hcl \
+                -backend-config="key=dev/nettverk.tfstate"
+
+            - name: Hent parameterfil for dev
+              run: |
+                az keyvault secret download \
+                --vault-name $KEY_VAULT_NAME \
+                --name nettverk-dev-tfvars \
+                --file "$RUNNER_TEMP/nettverk.tfvars" \
+                --encoding utf-8 \
+                --output none
+
             - name: Lag plan for dev
-              run:  
+              run: |
                 terraform plan \
                   -no-color \
                   -var-file="RUNNER_TEMP/nettverk.tfvars" \
@@ -79,8 +96,8 @@ jobs:
                 
             - name: Kommenter planen på PR
               env:
-                GITHUB_TOKEN: ${{ github.token }}
+                GH_TOKEN: ${{ github.token }}
                 PR_NUMBER: ${{ github.event.pull_request.number }}
-                run: |
-                    gh pr comment "$PR NUMBER" \
-                        --body-file "$RUNNER_TEMP/plan.txt"
+              run: |
+                gh pr comment "$PR_NUMBER" \
+                  --body-file "$RUNNER_TEMP/plan.txt"
