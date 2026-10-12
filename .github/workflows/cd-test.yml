@@ -1,0 +1,109 @@
+name: CD test
+run-name: test ← ${{ inputs.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Hele commit-SHA-en fra en vellykket dev-kjøring
+        type: string
+        required: true
+      
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-nettverk-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: test
+
+    defaults:
+      run:
+        working-directory: oving6/stacks/nettverk
+
+    env:
+      TF_INPUT: "false"
+      TF_IN_AUTOMATION: "true"
+
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      KEY_VAULT_NAME: ${{ secrets.KEYVAULT_NAME }}
+
+      TARGET_ENV: test
+      TF_STATE_KEY: "test/nettverk.tfstate"
+      TFVARS_SECRET: "nettverk-test-tfvars"
+
+    steps:
+      - name: Hent koden
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+      
+      - name: Sjekk at commit ligger på main
+        env:
+          SHA: ${{ inputs.sha }}
+        run: git merge-base --is-ancestor "$SHA" origin/main
+
+      - name: Installer Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Logg inn i Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Vis Azure-identitet
+        run: az account show
+      
+      - name: Init
+        run: |
+          terraform init \
+            -backend-config=../../shared/backend.hcl \
+            -backend-config="key=$TF_STATE_KEY"
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Hent parameterfil fra Key Vault
+        run: |
+          umask 077
+          az keyvault secret download \
+            --vault-name "$KEY_VAULT_NAME" \
+            --name "$TFVARS_SECRET" \
+            --file "$RUNNER_TEMP/nettverk.tfvars" \
+            --encoding utf-8 \
+            --output none
+
+      - name: Plan
+        run: |
+          terraform plan \
+            -var-file="$RUNNER_TEMP/nettverk.tfvars" \
+            -var="environment=$TARGET_ENV" \
+            -out="$RUNNER_TEMP/nettverk.tfplan"
+
+      - name: Apply
+        run: terraform apply "$RUNNER_TEMP/nettverk.tfplan"
+
+      - name: Slett parameterfil og planfil
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          rm -f "$RUNNER_TEMP/nettverk.tfvars"
+          rm -f "$RUNNER_TEMP/nettverk.tfplan"
+      
+      - name: Skriv oppsummering
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          printf 'Rullet ut `%s` til test\n' "$SHA" >> "$GITHUB_STEP_SUMMARY"
