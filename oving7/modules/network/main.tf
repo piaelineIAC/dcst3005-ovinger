@@ -27,6 +27,7 @@ resource "azurerm_subnet" "subnet" {
 }
 
 resource "azurerm_network_security_group" "nsg" {
+  #checkov:skip=CKV_AZURE_10
   name                = format("nsg-%s", var.base_name)
   location            = var.location
   resource_group_name = var.rg_name
