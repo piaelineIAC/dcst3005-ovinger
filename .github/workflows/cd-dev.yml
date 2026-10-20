@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - 'oving6/stacks/nettverk/**'
-      - 'oving6/modules/nettverk/**'
+      - 'oving6/modules/network/**'
       - 'oving6/shared/**'
       - '.github/workflows/cd-dev.yml'
 
