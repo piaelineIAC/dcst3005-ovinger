@@ -47,7 +47,7 @@ resource "azurerm_resource_group" "rg" {
   tags     = local.tags
 }
 
-module "network" {
+module "nettverk" {
   source = "../../modules/network"
 
   rg_name        = azurerm_resource_group.rg.name
